@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Reflection.Emit;
 using UnityEngine;
 
@@ -10,9 +11,20 @@ public class Player : MonoBehaviour{
     private Animator anim; //Animator
     [SerializeField] private float moveSpeed;
     [SerializeField] private float jumpForce;
+    
+    [Header("ダッシュ関連")]
+    [SerializeField] private float dashSpeed; //dashの速度
+    [SerializeField] private float dashDuration; //dashの長さ
+    private float dashTime; //dashの残り時間
+    [SerializeField] private float dashCooldown; //dashのCooldown時間
+    private float dashCooldownTimer; //Cooldownまでの時間
+
+
     private float xInput; //Arrow-Key
     private int facingDir = 1; // right == 1 , left == -1
     private bool facingRight = true;  //right == true , left == false
+
+
 
     [Header("衝突関連")]
     [SerializeField] private LayerMask whatIsGround; //Layerを調べ、Groundなのか見分ける
@@ -29,6 +41,10 @@ public class Player : MonoBehaviour{
         Movement(); //Move
         CheckInput(); //入力チェック
         CollisionChecks(); //衝突チェック
+        //dash
+        dashTime -= Time.deltaTime;
+        dashCooldownTimer -= Time.deltaTime;
+        
         FlipController(); //反転チェック
         AnimatorControllers();//Animation
     }
@@ -46,10 +62,25 @@ public class Player : MonoBehaviour{
         if (Input.GetKeyDown(KeyCode.Space)){
             Jump();
         }
+        //LeftShift - Dash
+        if (Input.GetKeyDown(KeyCode.LeftShift)){
+            DashAbility();
+        }
+    }
+
+    private void DashAbility(){
+        if(dashCooldownTimer < 0){
+            dashCooldownTimer = dashCooldown;
+            dashTime = dashDuration;
+        }
     }
 
     private void Movement(){
-        rb.velocity = new Vector2(xInput * moveSpeed, rb.velocity.y);
+        //dash(dash中は落下しない)
+        if(dashTime > 0)
+            rb.velocity = new Vector2(xInput * dashSpeed, 0);
+        else
+            rb.velocity = new Vector2(xInput * moveSpeed, rb.velocity.y);
     }
 
     private void Jump(){
@@ -63,6 +94,7 @@ public class Player : MonoBehaviour{
         anim.SetFloat("yVelocity", rb.velocity.y); // -1 fall 1 jump
         anim.SetBool("isMoving", isMoving); //isMovingの状態でAnimationを切り替える
         anim.SetBool("isGrounded", isGrounded);
+        anim.SetBool("isDashing", dashTime > 0);
     }
 
     private void Flip(){
