@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection.Emit;
 using UnityEngine;
 
 public class Player : MonoBehaviour{
@@ -13,22 +14,35 @@ public class Player : MonoBehaviour{
     private int facingDir = 1; // right == 1 , left == -1
     private bool facingRight = true;  //right == true , left == false
 
+    [Header("衝突関連")]
+    [SerializeField] private LayerMask whatIsGround; //Layerを調べ、Groundなのか見分ける
+    [SerializeField] private float groundCheckDistance; //PlayerからGroundまでの距離
+    private bool isGrounded; //Ground or Not
+
     void Start(){
         rb = GetComponent<Rigidbody2D>(); //ComponentにRigidbody2Dがあれば割り当てる
         anim = GetComponentInChildren<Animator>(); //ChildにAnimatorがあれば割り当てる
     }
 
-    void Update(){
+    void Update()
+    {
         Movement(); //Move
         CheckInput(); //入力チェック
+        CollisionChecks(); //衝突チェック
         FlipController(); //反転チェック
         AnimatorControllers();//Animation
+    }
+
+    private void CollisionChecks(){
+        //transform.positionから下方向にgroundCheckDistanceだけ光線を射出し、
+        //特定のレイヤ(whatIsGround)とぶつかるか調べる(※将来的に if isGrounded jumpCount = 0)
+        isGrounded = Physics2D.Raycast(transform.position, Vector2.down, groundCheckDistance, whatIsGround);
     }
 
     private void CheckInput(){
         //Arrow - Move
         xInput = Input.GetAxisRaw("Horizontal");
-        //Space　- Jump
+        //Space　- Jump(Only Grounded)
         if (Input.GetKeyDown(KeyCode.Space)){
             Jump();
         }
@@ -39,13 +53,16 @@ public class Player : MonoBehaviour{
     }
 
     private void Jump(){
-        rb.velocity = new Vector2(rb.velocity.x, jumpForce);
+        if(isGrounded)
+            rb.velocity = new Vector2(rb.velocity.x, jumpForce);
     }
 
     private void AnimatorControllers(){
         //Animator - Move
         bool isMoving = rb.velocity.x != 0; //速度が0でなければTrue
-        anim.SetBool("isMoving", isMoving);
+        anim.SetFloat("yVelocity", rb.velocity.y); // -1 fall 1 jump
+        anim.SetBool("isMoving", isMoving); //isMovingの状態でAnimationを切り替える
+        anim.SetBool("isGrounded", isGrounded);
     }
 
     private void Flip(){
@@ -59,5 +76,11 @@ public class Player : MonoBehaviour{
             Flip();
         else if(rb.velocity.x < 0 && facingRight)
             Flip();
+    }
+
+    private void OnDrawGizmos() {
+        //PlayerからgroundCheckDistance分の線をy方向に引く
+        Gizmos.DrawLine(transform.position, new Vector3(transform.position.x, transform.position.y - groundCheckDistance));
+
     }
 }
