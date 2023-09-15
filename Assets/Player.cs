@@ -4,11 +4,11 @@ using System.ComponentModel;
 using System.Reflection.Emit;
 using UnityEngine;
 
-public class Player : MonoBehaviour{
+public class Player : Entity{
 
     //Inspectorに表示する理由はないのでコンポーネントを取得する
-    private Rigidbody2D rb; //剛体(アタッチ)
-    private Animator anim; //Animator
+
+    [Header("移動関連")]
     [SerializeField] private float moveSpeed;
     [Header("Jump関連")]
     [SerializeField] private float jumpForce;
@@ -29,23 +29,19 @@ public class Player : MonoBehaviour{
 
 
     private float xInput; //Arrow-Key
-    private int facingDir = 1; // right == 1 , left == -1
-    private bool facingRight = true;  //right == true , left == false
 
 
 
-    [Header("衝突関連")]
-    [SerializeField] private LayerMask whatIsGround; //Layerを調べ、Groundなのか見分ける
-    [SerializeField] private float groundCheckDistance; //PlayerからGroundまでの距離
-    private bool isGrounded; //Ground or Not
 
-    void Start(){
-        rb = GetComponent<Rigidbody2D>(); //ComponentにRigidbody2Dがあれば割り当てる
-        anim = GetComponentInChildren<Animator>(); //ChildにAnimatorがあれば割り当てる
+
+    protected override void Start() {
+        base.Start();
     }
 
-    void Update()
+
+    protected override void Update()
     {
+        base.Update();
         Movement(); //Move
         CheckInput(); //入力チェック
         CollisionChecks(); //衝突チェック
@@ -54,6 +50,9 @@ public class Player : MonoBehaviour{
         dashCooldownTimer -= Time.deltaTime;
         //combo
         comboTimeWindow -= Time.deltaTime;
+        //jump_count(短絡評価)
+        if(jumpCount != jumpMaxCount && rb.velocity.y == 0 && isGrounded)
+            jumpCount = jumpMaxCount;
         
         FlipController(); //反転チェック
         AnimatorControllers();//Animation
@@ -68,11 +67,6 @@ public class Player : MonoBehaviour{
 
     }
 
-    private void CollisionChecks(){
-        //transform.positionから下方向にgroundCheckDistanceだけ光線を射出し、
-        //特定のレイヤ(whatIsGround)とぶつかるか調べる(※将来的に if isGrounded jumpCount = 0)
-        isGrounded = Physics2D.Raycast(transform.position, Vector2.down, groundCheckDistance, whatIsGround);
-    }
 
     private void CheckInput(){
         //Arrow - Move
@@ -142,11 +136,7 @@ public class Player : MonoBehaviour{
         anim.SetInteger("comboCounter", comboCounter);
     }
 
-    private void Flip(){
-        facingDir *=  -1;
-        facingRight = !facingRight;
-        transform.Rotate(0,180,0);
-    }
+
 
     private void FlipController(){
         if (rb.velocity.x > 0 && !facingRight)
@@ -155,9 +145,4 @@ public class Player : MonoBehaviour{
             Flip();
     }
 
-    private void OnDrawGizmos() {
-        //PlayerからgroundCheckDistance分の線をy方向に引く
-        Gizmos.DrawLine(transform.position, new Vector3(transform.position.x, transform.position.y - groundCheckDistance));
-
-    }
 }
