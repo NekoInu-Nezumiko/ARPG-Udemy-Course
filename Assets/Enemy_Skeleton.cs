@@ -21,10 +21,12 @@ public class Enemy_Skeleton : Entity{
 
     protected override void Update(){
         base.Update();
+        if (!isGrounded || isWallDetected)
+            Flip();
 
         if (isPlayerDetected){
             if (isPlayerDetected.distance > 1){
-                rb.velocity = new Vector2(moveSpeed * 1.5f * facingDir, rb.velocity.y);
+                rb.velocity = new Vector2(moveSpeed * 3.0f * facingDir, rb.velocity.y);
                 Debug.Log("I see the player");
                 isAttacking = false;
             }
@@ -33,12 +35,10 @@ public class Enemy_Skeleton : Entity{
                 isAttacking = true;
 
             }
+        }else{
+            isAttacking = false;
+            Movement();
         }
-
-        if (!isGrounded || isWallDetected)
-            Flip();
-        Movement();
-
     }
 
     private void Movement(){
