@@ -15,7 +15,7 @@ public class Enemy_Skeleton : Entity{
 
     private RaycastHit2D isPlayerDetected; //Playerを検出すればTrue
 
-    protected override void Start() {
+    protected override void Start(){
         base.Start();
     }
 
@@ -29,8 +29,7 @@ public class Enemy_Skeleton : Entity{
                 rb.velocity = new Vector2(moveSpeed * 3.0f * facingDir, rb.velocity.y);
                 Debug.Log("I see the player");
                 isAttacking = false;
-            }
-            else{
+            }else{
                 Debug.Log("ATTACK" + isPlayerDetected.collider.gameObject.name);
                 isAttacking = true;
 
@@ -42,7 +41,7 @@ public class Enemy_Skeleton : Entity{
     }
 
     private void Movement(){
-        if(!isAttacking)
+        if (!isAttacking)
             rb.velocity = new Vector2(moveSpeed * facingDir, rb.velocity.y);
     }
 
@@ -58,5 +57,7 @@ public class Enemy_Skeleton : Entity{
         Gizmos.color = Color.red;
         Gizmos.DrawLine(transform.position, new Vector3(transform.position.x + playerCheckDistance * facingDir, transform.position.y));
     }
+
+
 
 }
